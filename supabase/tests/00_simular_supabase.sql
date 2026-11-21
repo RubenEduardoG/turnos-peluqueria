@@ -9,7 +9,9 @@ grant usage on schema public to anon, authenticated, service_role;
 
 create schema auth;
 grant usage on schema auth to anon, authenticated;
-create table auth.users (id uuid primary key);
+create table auth.users (id uuid primary key, email text);
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated;
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub', '')::uuid
 $$;

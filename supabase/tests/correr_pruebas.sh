@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 DB=${DB:-turnos_test}
 P="psql -v ON_ERROR_STOP=1 -q"
+export PGOPTIONS="-c search_path=public,extensions"
 $P -d postgres -c "drop database if exists $DB" -c "create database $DB"
 $P -d "$DB" -f tests/00_simular_supabase.sql
 for f in migrations/*.sql; do
@@ -13,7 +14,7 @@ for f in migrations/*.sql; do
 done
 $P -d "$DB" -f tests/10_pruebas_flujos.sql
 
-echo '--- 19. Concurrencia: 30 reservas simultáneas del mismo horario'
+echo '--- 20. Concurrencia: 30 reservas simultáneas del mismo horario'
 pgbench -n -c 30 -j 30 -t 1 -f tests/20_concurrencia.pgbench "$DB" >/tmp/pgbench.log 2>&1 || true
-N=$(psql -tA -d "$DB" -c "select count(*) from agenda where kind='appointment' and lower(period) = t_at('10:00', 8) and status <> 'cancelled_by_customer'")
+N=$(psql -tA -d "$DB" -c "select count(*) from agenda where kind='appointment' and lower(period) = t_at('10:00', 9)")
 if [ "$N" = "1" ]; then echo "OK  exactamente 1 de 30 reservas simultáneas quedó registrada"; else echo "FALLO: quedaron $N"; cat /tmp/pgbench.log; exit 1; fi

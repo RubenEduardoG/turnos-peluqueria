@@ -1,4 +1,4 @@
--- 30 clientes intentan reservar el MISMO horario a la vez (día +8, 10:00).
+-- 30 clientes intentan reservar el MISMO horario a la vez (barberia-a, día +9, 10:00).
 \set n random(100000, 999999)
 set role anon;
-select reservar('00000000-0000-0000-0000-000000000060', t_at('10:00', 8), 'Concurrente', '54911' || :n, null, null, false, true);
+select reservar('barberia-a', '00000000-0000-0000-0000-000000000060', t_at('10:00', 9), 'Concurrente', '54911' || :n, null, null, true);
