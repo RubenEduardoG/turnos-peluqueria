@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo · App de turnos para peluquería</title>
+<meta name="description" content="Demo navegable de una app de turnos para un peluquero independiente: reservas, lista de espera y panel de cancelación.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F4F2EE;--ink:#141414;--muted:#5E5A55;--soft:#3B3833;--line:#DAD5CD;--line2:#BDB6AB;--card:#FFFFFF;--accent:#1F5F4A;--accent-dark:#143F31;--ok-bg:#E3EFE9;--ok-line:#A9CDBD;--warn-bg:#FBF3E6;--warn-line:#D9B98A;--warn-ink:#6B4F23;--danger:#8A2B1F;--danger-line:#D9B3AC}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--ink);background:#E6E2DB}
+h1,h2,.display{font-family:'Space Grotesk',Inter,sans-serif}
+button{font-family:inherit;cursor:pointer}
+a{color:var(--accent)}
+.top{position:sticky;top:0;z-index:5;background:#141414;color:#F4F2EE;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.top strong{font-size:15px}
+.seg{display:flex;background:#26272A;border-radius:12px;padding:4px;gap:4px}
+.seg button{border:0;border-radius:9px;min-height:40px;padding:0 14px;font-size:14px;font-weight:600;background:transparent;color:#C9C3B9}
+.seg button[aria-pressed="true"]{background:#F4F2EE;color:#141414}
+.wrap{display:flex;justify-content:center;padding:24px 12px 48px}
+.phone{width:390px;max-width:100%;min-height:844px;background:var(--bg);border-radius:28px;overflow:hidden;box-shadow:0 0 0 1px #CFC9BF;display:flex;flex-direction:column}
+@media (max-width:440px){.wrap{padding:0}.phone{border-radius:0;box-shadow:none;min-height:calc(100vh - 64px)}}
+.screen{display:none;flex:1;flex-direction:column}
+.screen.on{display:flex}
+.pad{padding:0 20px;display:flex;flex-direction:column;gap:14px;flex:1}
+.head{padding:20px 20px 8px;display:flex;align-items:center;gap:8px}
+.back{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--ink);background:transparent;border:0}
+.step{font-size:15px;color:var(--muted)}
+.h1{margin:0;font-size:26px;font-weight:600;line-height:1.15}
+.sub{margin:0;font-size:15px;color:var(--muted)}
+.small{margin:0;font-size:13px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.svc{width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--ink)}
+.svc:hover,.svc:focus-visible{border:2px solid var(--accent);padding:17px}
+.svc .n{font-size:18px;font-weight:600;display:block}.svc .d{font-size:14px;color:var(--muted);display:block;margin-top:4px}.svc .p{font-size:17px;font-weight:600}
+.btn{border:0;border-radius:14px;min-height:56px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:17px;font-weight:600;text-decoration:none;width:100%}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line2)}
+.btn.outline{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn.danger{background:var(--danger);color:#fff}
+.btn.sm{min-height:50px;font-size:15px;border-radius:12px}
+.foot{padding:16px 20px 24px;background:#fff;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.day,.slot,.opt,.chip{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.day{min-height:64px;border-radius:14px;padding:8px 4px}
+.day span{display:block}.day .t{font-size:13px}.day .b{font-size:18px;font-weight:600;margin-top:2px}
+.day[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.slot{min-height:48px;border-radius:12px;font-size:16px;font-weight:600}
+.slot[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.label{font-size:15px;font-weight:600;color:var(--muted);margin:0}
+.field{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}
+.field input{min-height:50px;border:1px solid var(--line2);border-radius:12px;padding:0 14px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+.check{display:flex;align-items:flex-start;gap:12px;font-size:14px;line-height:1.4;color:var(--soft)}
+.check input{width:22px;height:22px;margin:0;accent-color:var(--accent);flex:none}
+.ok{background:var(--ok-bg);border:1px solid var(--ok-line);border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;font-weight:600;color:var(--accent-dark)}
+.badge{font-size:12px;font-weight:600;border-radius:999px;padding:6px 10px;white-space:nowrap}
+.badge.ok2{color:var(--accent-dark);background:var(--ok-bg)}
+.badge.warn{color:var(--warn-ink);background:var(--warn-bg)}
+.nav{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-top:1px solid var(--line);background:#fff;margin-top:auto}
+.nav button{border:0;background:transparent;min-height:64px;font-size:13px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.nav button[aria-current="page"]{color:var(--accent);font-weight:700}
+.big{font-size:30px;font-weight:700}
+.tip{border:1px dashed var(--line2);border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.45;color:var(--soft)}
+.note{margin:0;font-size:13px;border-radius:10px;padding:10px 12px}
+.adm-head{background:#141414;color:#F4F2EE;padding:24px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.stat{background:#26272A;border-radius:12px;padding:10px 12px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:#C9C3B9}
+.row{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:14px;align-items:center}
+.row .hh{font-family:'Space Grotesk',Inter,sans-serif;font-size:20px;font-weight:700;width:56px;flex:none}
+.row .who{display:flex;flex-direction:column;gap:2px;flex:1}.row .who b{font-size:16px}.row .who span{font-size:13px;color:var(--muted)}
+.row.free{background:var(--warn-bg);border:1px dashed var(--warn-line)}.row.free .who span{color:var(--warn-ink)}
+.mini{min-height:44px;border-radius:10px;font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--soft)}
+.mini.done{background:var(--ok-bg);border-color:var(--ok-line);color:var(--accent-dark)}
+.feed{display:flex;gap:10px;align-items:baseline;font-size:14px}.dot{width:8px;height:8px;border-radius:4px;flex:none}
+.opt{text-align:left;border-radius:14px;padding:12px 14px;min-height:60px}
+.opt[aria-pressed="true"]{border:2px solid var(--ink);padding:11px 13px}
+.opt b{display:block;font-size:15px}.opt span{display:block;font-size:12px;margin-top:4px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;border-radius:999px;padding:0 14px;font-size:14px;font-weight:600;border-color:var(--line2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.msg{margin:0;font-size:14px;line-height:1.5;color:var(--soft);background:var(--bg);border-radius:12px;padding:12px;white-space:pre-line}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+textarea{width:100%;min-height:90px;border:1px solid var(--line2);border-radius:12px;padding:10px 12px;font:inherit;font-size:15px}
+.disclaimer{max-width:390px;margin:12px auto 0;font-size:12px;color:var(--muted);text-align:center;padding:0 12px}
+</style>
+</head>
+<body>
+<div class="top">
+  <strong>Demo · Turnos para peluquería</strong>
+  <div class="seg" role="group" aria-label="Elegir app">
+    <button type="button" data-app="cliente" aria-pressed="true">App del cliente</button>
+    <button type="button" data-app="admin" aria-pressed="false">Panel del peluquero</button>
+  </div>
+</div>
+
+<div class="wrap"><div class="phone">
+
+<!-- 1 · Servicios -->
+<section class="screen on" data-screen="main" aria-label="Elegí un servicio">
+  <header style="padding:28px 20px 20px;display:flex;align-items:center;gap:14px">
+    <div aria-hidden="true" style="width:56px;height:56px;border-radius:16px;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">LOGO</div>
+    <div><h1 style="margin:0;font-size:22px">[Nombre de la barbería]</h1><p class="sub" style="font-size:14px">[Dirección]</p></div>
+  </header>
+  <div class="pad">
+    <h2 class="h1">¿Qué te hacés?</h2>
+    <p class="sub">Elegí un servicio y después el horario.</p>
+    <button type="button" class="svc" data-go="horario" data-svc="Corte · 30 min"><span><span class="n">Corte</span><span class="d">30 min</span></span><span class="p">$ [precio]</span></button>
+    <button type="button" class="svc" data-go="horario" data-svc="Corte + barba · 45 min"><span><span class="n">Corte + barba</span><span class="d">45 min</span></span><span class="p">$ [precio]</span></button>
+    <button type="button" class="svc" data-go="horario" data-svc="Barba · 20 min"><span><span class="n">Barba</span><span class="d">20 min</span></span><span class="p">$ [precio]</span></button>
+    <a class="btn outline sm" href="https://wa.me/" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+  </div>
+  <nav class="nav" aria-label="Secciones"><button type="button" data-go="main" aria-current="page">Reservar</button><button type="button" data-go="misturnos">Mis turnos</button></nav>
+</section>
+
+<!-- 2 · Día y horario -->
+<section class="screen" data-screen="horario" aria-label="Día y horario">
+  <div class="head"><button type="button" class="back" data-go="main" aria-label="Volver"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button><span class="step">Paso 2 de 3</span></div>
+  <div class="pad">
+    <div><h1 class="h1">Elegí día y horario</h1><p class="sub" id="svcLabel">Corte · 30 min</p></div>
+    <div class="grid3" id="days"></div>
+    <p class="small" style="margin-top:-6px">Podés reservar hasta 5 días hacia adelante.</p>
+    <p class="label">Mañana</p><div class="grid4" id="am"></div>
+    <p class="label">Tarde</p><div class="grid4" id="pm"></div>
+    <p class="small">Sólo se muestran los horarios libres. Se actualizan en vivo.</p>
+  </div>
+  <div class="foot"><button type="button" class="btn primary" data-go="datos" id="toDatos">Continuar</button></div>
+</section>
+
+<!-- 3 · Datos -->
+<section class="screen" data-screen="datos" aria-label="Tus datos">
+  <div class="head"><button type="button" class="back" data-go="horario" aria-label="Volver"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button><span class="step">Paso 3 de 3</span></div>
+  <div class="pad">
+    <h1 class="h1">Tus datos</h1>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:17px" class="js-svc">Corte</b><p class="sub js-when">Domingo 22/11 · 10:30</p></div><b style="font-size:17px">$ [precio]</b></div>
+    <label class="field">Nombre<input type="text" value="Martín" autocomplete="name"></label>
+    <label class="field">Teléfono con WhatsApp<input type="tel" value="11 2345 6789" autocomplete="tel"></label>
+    <label class="field">Comentario (opcional)<input type="text" placeholder="Ej.: degradé bajo"></label>
+    <label class="check"><input type="checkbox" checked><span>Acepto que se guarden mi nombre y teléfono para gestionar mis turnos. <a href="#privacidad">Aviso de privacidad</a></span></label>
+  </div>
+  <div class="foot"><button type="button" class="btn primary" data-go="misturnos" data-booked="1">Confirmar reserva</button><p class="small" style="text-align:center">No hace falta crear una cuenta.</p></div>
+</section>
+
+<!-- 4 · Mis turnos -->
+<section class="screen" data-screen="misturnos" aria-label="Mis turnos">
+  <div class="pad" style="padding-top:28px">
+    <div class="ok" role="status" id="bookedOk" hidden><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg>¡Listo! Tu turno quedó reservado.</div>
+    <h1 class="h1">Mis turnos</h1>
+    <article class="card" style="border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><p class="small js-day">Domingo 22/11</p><span class="display big js-time">10:30</span><p style="margin:0;font-size:15px" class="js-svc">Corte · 30 min</p></div><span class="badge ok2">Confirmado</span></div>
+      <div class="grid2"><button type="button" class="btn dark sm" data-go="horario">Cambiar horario</button><button type="button" class="btn ghost sm" style="color:var(--danger);border-color:var(--danger-line)" id="cancelBtn">Cancelar</button></div>
+      <p class="small">Podés cambiarlo o cancelarlo hasta [plazo] antes.</p>
+    </article>
+    <div class="card" style="border-radius:18px;display:flex;flex-direction:column;gap:10px">
+      <label style="display:flex;align-items:center;justify-content:space-between;gap:14px;cursor:pointer"><span><b style="font-size:16px;display:block">Avisarme si se libera un turno antes</b><span class="small">Si alguien cancela ese día, te lo ofrecemos primero.</span></span><input type="checkbox" id="earlier" checked style="width:26px;height:26px;accent-color:var(--accent);flex:none"></label>
+      <p class="note" id="earlierOn" style="background:var(--ok-bg);color:var(--accent-dark)">Activado. Te va a llegar una notificación al celular. Para eso el celular te pidió permiso.</p>
+      <p class="note" id="earlierOff" style="color:var(--muted);padding:0" hidden>Al activarlo, el celular te pide permiso para enviarte notificaciones.</p>
+    </div>
+    <button type="button" class="btn outline sm" data-go="oferta">Ver ejemplo: se liberó un turno antes</button>
+    <div class="tip"><b>Tip:</b> agregá esta página a tu pantalla de inicio para abrirla como una app.</div>
+  </div>
+  <nav class="nav" aria-label="Secciones"><button type="button" data-go="main">Reservar</button><button type="button" data-go="misturnos" aria-current="page">Mis turnos</button></nav>
+</section>
+
+<!-- 5 · Oferta -->
+<section class="screen" data-screen="oferta" aria-label="Se liberó un turno más temprano">
+  <div class="pad" style="padding-top:28px;padding-bottom:24px">
+    <div class="card" style="display:flex;gap:12px"><div aria-hidden="true" style="width:36px;height:36px;border-radius:10px;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex:none">LOGO</div><div><p class="small">Notificación · hace 1 min</p><b style="font-size:15px">Se liberó un turno más temprano</b><p style="margin:2px 0 0;font-size:14px;color:var(--soft)">Se liberó un turno hoy a las 11:00. Tenés reservado hoy a las 12:00. ¿Querés adelantarlo?</p></div></div>
+    <div id="offAsk" style="display:flex;flex-direction:column;gap:18px;flex:1">
+      <h1 class="h1" style="font-size:28px;margin-top:8px">¡Hola, Facundo! ¿Querés venir antes?</h1>
+      <div class="card" style="border-radius:18px;padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><p class="small">Tu turno actual</p><span class="display big" style="color:var(--muted);text-decoration:line-through;font-weight:600">12:00</span></div>
+        <div><p class="small" style="color:var(--accent-dark);font-weight:600">Nuevo horario</p><span class="display big" style="color:var(--accent)">11:00</span></div>
+        <span style="grid-column:1/-1;font-size:15px">Hoy · Corte · 30 min</span>
+      </div>
+      <p class="sub" style="font-size:14px">Lo guardamos para vos hasta las 10:15. Si no respondés, se le ofrece a otra persona y conservás tu turno de las 12:00.</p>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px"><button type="button" class="btn primary" id="offYes">Sí, adelantar a las 11:00</button><button type="button" class="btn ghost" id="offNo">No, mantener las 12:00</button></div>
+    </div>
+    <div id="offDone" hidden style="display:flex;flex-direction:column;gap:14px;flex:1"><h1 class="h1" id="offTitle" style="font-size:28px;margin-top:8px"></h1><p class="sub" id="offText"></p><button type="button" class="btn primary" style="margin-top:auto" data-go="misturnos">Ver mis turnos</button></div>
+  </div>
+</section>
+
+<!-- 6 · Agenda del peluquero -->
+<section class="screen" data-screen="agenda" aria-label="Agenda del día">
+  <header class="adm-head">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><span style="font-size:13px;color:#C9C3B9">Hoy</span><h1 style="margin:0;font-size:24px;font-weight:600">Sábado 21/11</h1></div><button type="button" class="btn sm" data-go="cancelar" style="width:auto;min-height:44px;padding:0 14px;background:var(--bg);color:var(--ink);font-size:14px">Bloquear y avisar</button></div>
+    <div class="grid3"><div class="stat"><b>5</b><span>turnos</span></div><div class="stat"><b>1</b><span>ofrecido</span></div><div class="stat"><b>$ [—]</b><span>estimado</span></div></div>
+  </header>
+  <div class="pad" style="padding-top:16px">
+    <section class="card" aria-label="Últimos avisos" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
+      <span class="label" style="font-size:13px">Últimos avisos</span>
+      <div class="feed"><span class="dot" style="background:var(--accent)"></span><span><b>Nueva reserva</b> · Diego · Corte · dom 22/11 10:00</span></div>
+      <div class="feed"><span class="dot" style="background:#B4542D"></span><span><b>Turno cancelado</b> · Martín canceló hoy 11:00</span></div>
+      <div class="feed"><span class="dot" style="background:#3D5A99"></span><span><b>Turno cambiado</b> · Ana pasó a lun 23/11 16:00</span></div>
+    </section>
+    <ol class="list">
+      <li class="row" style="flex-direction:column;align-items:stretch;gap:10px"><div style="display:flex;gap:14px;align-items:center"><span class="hh">10:00</span><span class="who"><b>Lucas</b><span>Corte · 30 min</span></span></div><div class="grid2"><button type="button" class="mini" data-mark="done">Realizado</button><button type="button" class="mini" data-mark="noshow">No vino</button></div></li>
+      <li class="row free"><span class="hh">11:00</span><span class="who"><b style="font-size:15px">Libre · ofrecido a Facundo</b><span>Espera respuesta, vence 10:15. Automático.</span></span></li>
+      <li class="row"><span class="hh">12:00</span><span class="who"><b>Facundo</b><span>Corte · 30 min</span></span></li>
+      <li style="padding:8px 14px;display:flex;gap:14px;color:var(--muted)"><span style="width:56px">13:00</span><span>Descanso</span></li>
+      <li class="row"><span class="hh">14:00</span><span class="who"><b>Juan</b><span>Corte + barba · 45 min</span></span></li>
+      <li class="row"><span class="hh">15:00</span><span class="who"><b>Nicolás</b><span>Barba · 20 min</span></span></li>
+    </ol>
+    <button type="button" class="btn ghost sm" style="border-color:var(--ink)">+ Agregar turno a mano</button>
+  </div>
+  <nav class="nav" aria-label="Secciones del panel" style="margin-top:12px"><button type="button" aria-current="page" data-go="agenda">Agenda</button><button type="button">Clientes</button><button type="button">Horarios</button><button type="button">Números</button></nav>
+</section>
+
+<!-- 7 · Bloquear y avisar -->
+<section class="screen" data-screen="cancelar" aria-label="Bloquear y avisar">
+  <div class="head"><button type="button" class="back" data-go="agenda" aria-label="Volver a la agenda"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1 style="margin:0;font-size:24px;font-weight:600">Bloquear y avisar</h1></div>
+  <div class="pad" style="gap:22px">
+    <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:16px;font-family:Inter">1. ¿Qué querés bloquear?</h2><div id="ranges" style="display:flex;flex-direction:column;gap:8px"></div><p id="affected" style="margin:0;font-size:14px;font-weight:600;color:var(--danger)"></p></section>
+    <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:16px;font-family:Inter">2. ¿Qué pasa con los clientes?</h2><div class="grid2" style="gap:8px"><button type="button" class="opt" data-opt="elegir" aria-pressed="true"><b>Que elijan otro horario</b><span>Reciben un enlace para elegir uno libre</span></button><button type="button" class="opt" data-opt="avisar" aria-pressed="false"><b>Solo avisar</b><span>Se cancela y reservan cuando quieran</span></button></div></section>
+    <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0;font-size:16px;font-family:Inter">3. Elegí el mensaje</h2><div class="chips" id="tpls"></div>
+      <div class="card" style="display:flex;flex-direction:column;gap:8px"><span class="small" style="font-weight:600">Vista previa · así le llega a Juan</span><p id="preview" style="margin:0;font-size:15px;line-height:1.5;white-space:pre-line"></p><div id="customBox" hidden><label class="small" for="customText">Tu mensaje. Podés usar {nombre}, {dia} y {hora}: se completan solos.</label><textarea id="customText">Hola {nombre}, hoy no voy a poder atenderte el {dia} a las {hora}. Perdón.</textarea></div></div>
+    </section>
+  </div>
+  <div class="foot"><button type="button" class="btn danger" data-go="enviar" id="ctaBlock"></button><p class="small" style="text-align:center">Antes de enviar ves el mensaje de cada cliente.</p></div>
+</section>
+
+<!-- 8 · Mensajes a cada cliente -->
+<section class="screen" data-screen="enviar" aria-label="Mensajes a cada cliente">
+  <div class="head"><button type="button" class="back" data-go="cancelar" aria-label="Volver"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></button><h1 style="margin:0;font-size:24px;font-weight:600">Avisar a los clientes</h1></div>
+  <div class="pad">
+    <div class="card" role="status"><b style="font-size:16px">Bloqueado: hoy de 14:00 a 20:00</b><p class="sub" style="font-size:14px;margin-top:4px" id="blockedText"></p></div>
+    <p style="margin:0;font-size:15px;font-weight:600" id="progress"></p>
+    <article class="card" style="border-radius:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span><b style="font-size:17px;display:block">Juan</b><span class="small">Hoy 14:00 · Corte + barba</span></span><span class="badge warn" id="juanBadge">Pendiente</span></div>
+      <p class="msg" id="msgJuan"></p>
+      <span class="small">No tiene notificaciones: mandalo por WhatsApp.</span>
+      <button type="button" class="btn primary sm" id="sendJuan">Enviar por WhatsApp</button>
+    </article>
+    <article class="card" style="border-radius:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span><b style="font-size:17px;display:block">Nicolás</b><span class="small">Hoy 15:00 · Barba</span></span><span class="badge ok2">Notificación enviada</span></div>
+      <p class="msg" id="msgNico"></p>
+      <button type="button" class="btn outline sm" id="sendNico">Enviar también por WhatsApp</button>
+    </article>
+    <p class="small" style="line-height:1.45">Cada botón abre WhatsApp con el mensaje ya escrito para esa persona; sólo tocás Enviar. Cuando eligen un horario nuevo, te llega un aviso.</p>
+  </div>
+  <div style="padding:16px 20px 24px"><button type="button" class="btn dark" data-go="agenda">Volver a la agenda</button></div>
+</section>
+
+</div></div>
+<p class="disclaimer">Demo con datos de ejemplo: servicios, precios, horarios y nombres son ilustrativos. No guarda ni envía nada.</p>
+
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var state = { svc: 'Corte · 30 min', day: 1, slot: '10:30', range: 0, opt: 'elegir', tpl: 0, juan: false };
+  var clientScreens = ['main', 'horario', 'datos', 'misturnos', 'oferta'];
+
+  function go(name) {
+    $$('.screen').forEach(function (s) { s.classList.toggle('on', s.dataset.screen === name); });
+    var admin = clientScreens.indexOf(name) === -1;
+    $$('.seg button').forEach(function (b) { b.setAttribute('aria-pressed', String((b.dataset.app === 'admin') === admin)); });
+    window.scrollTo(0, 0);
+    render();
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-go]');
+    if (t) {
+      if (t.dataset.svc) state.svc = t.dataset.svc;
+      if (t.dataset.booked) $('#bookedOk').hidden = false;
+      go(t.dataset.go);
+      return;
+    }
+    var app = e.target.closest('[data-app]');
+    if (app) { go(app.dataset.app === 'admin' ? 'agenda' : 'main'); return; }
+    var mark = e.target.closest('[data-mark]');
+    if (mark) { $$('[data-mark]').forEach(function (b) { b.classList.remove('done'); }); mark.classList.add('done'); }
+  });
+
+  // Horarios
+  var days = [['Hoy', 'Sáb 21'], ['Mañana', 'Dom 22'], ['Lunes', '23'], ['Martes', '24'], ['Miércoles', '25'], ['Jueves', '26']];
+  var longDays = ['Sábado 21/11', 'Domingo 22/11', 'Lunes 23/11', 'Martes 24/11', 'Miércoles 25/11', 'Jueves 26/11'];
+  var am = ['09:00', '09:30', '10:30', '11:00', '11:30', '12:00'];
+  var pm = ['14:00', '15:00', '15:30', '16:00', '17:30', '18:00', '18:30', '19:00'];
+  function btn(cls, html, pressed, onclick) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = cls; b.innerHTML = html;
+    b.setAttribute('aria-pressed', String(pressed)); b.onclick = onclick; return b;
+  }
+  function renderSlots() {
+    var d = $('#days'); d.textContent = '';
+    days.forEach(function (x, i) {
+      d.appendChild(btn('day', '<span class="t">' + x[0] + '</span><span class="b">' + x[1] + '</span>', state.day === i, function () { state.day = i; render(); }));
+    });
+    [['#am', am], ['#pm', pm]].forEach(function (p) {
+      var el = $(p[0]); el.textContent = '';
+      p[1].forEach(function (s) { el.appendChild(btn('slot', s, state.slot === s, function () { state.slot = s; render(); })); });
+    });
+    $('#svcLabel').textContent = state.svc;
+    $('#toDatos').textContent = 'Continuar · ' + days[state.day][1] + ' ' + state.slot;
+    $$('.js-svc').forEach(function (el) { el.textContent = state.svc; });
+    $$('.js-when').forEach(function (el) { el.textContent = longDays[state.day] + ' · ' + state.slot; });
+    $$('.js-day').forEach(function (el) { el.textContent = longDays[state.day]; });
+    $$('.js-time').forEach(function (el) { el.textContent = state.slot; });
+  }
+
+  // Avisos de adelanto
+  $('#earlier').addEventListener('change', function () {
+    $('#earlierOn').hidden = !this.checked; $('#earlierOff').hidden = this.checked;
+  });
+  $('#cancelBtn').addEventListener('click', function () { this.textContent = 'Cancelado (demo)'; });
+
+  // Oferta
+  function answer(yes) {
+    $('#offAsk').hidden = true; $('#offDone').hidden = false;
+    $('#offTitle').textContent = yes ? '¡Listo! Te esperamos a las 11:00.' : 'Perfecto, seguís a las 12:00.';
+    $('#offText').textContent = yes ? 'Tu turno de las 12:00 quedó libre para otra persona.' : 'No cambia nada en tu turno.';
+  }
+  $('#offYes').onclick = function () { answer(true); };
+  $('#offNo').onclick = function () { answer(false); };
+
+  // Panel de cancelación
+  var ranges = [['Desde ahora hasta el cierre', 'Hoy, de 14:00 a 20:00', 2], ['Un rango de horas', 'Elegí día, hora de inicio y fin', 1], ['Días completos o vacaciones', 'Elegí desde qué día hasta qué día', 0]];
+  var tpls = [
+    ['Imprevisto', 'Hola {nombre}, ¿cómo estás? Te escribo porque por un imprevisto no voy a poder atenderte el {dia} a las {hora}. Disculpá las molestias.'],
+    ['Problema de salud', 'Hola {nombre}, ¿cómo estás? Por un problema de salud no voy a poder atenderte el {dia} a las {hora}. Perdón por avisarte sobre la hora.'],
+    ['Problema en el local', 'Hola {nombre}, ¿cómo estás? Tuvimos un problema en el local y no vamos a poder atenderte el {dia} a las {hora}. Disculpá las molestias.'],
+    ['Cambio de agenda', 'Hola {nombre}, ¿cómo estás? Necesito modificar mi agenda y tu turno del {dia} a las {hora} queda suspendido.'],
+    ['Mensaje original', 'Hola, ¿cómo estás? Te escribimos para avisarte que por un imprevisto necesitamos modificar tu turno del {dia} a las {hora}. Disculpá las molestias.'],
+    ['Escribir el mío', null]
+  ];
+  function body() { return tpls[state.tpl][1] || $('#customText').value; }
+  function fill(text, name, hora) {
+    var link = state.opt === 'elegir' ? 'Elegí otro horario acá: [enlace personal]' : 'Cuando quieras, reservá de nuevo acá: [enlace de la app]';
+    return text.replace(/\{nombre\}/g, name).replace(/\{dia\}/g, 'sábado 21/11').replace(/\{hora\}/g, hora) + '\n' + link;
+  }
+  $('#customText').addEventListener('input', render);
+  $$('[data-opt]').forEach(function (b) { b.onclick = function () { state.opt = b.dataset.opt; render(); }; });
+  function renderCancel() {
+    var r = $('#ranges'); r.textContent = '';
+    ranges.forEach(function (x, i) {
+      r.appendChild(btn('opt', '<b style="font-size:16px">' + x[0] + '</b><span style="font-size:13px">' + x[1] + '</span>', state.range === i, function () { state.range = i; render(); }));
+    });
+    var n = ranges[state.range][2];
+    $('#affected').textContent = n === 0 ? 'No hay turnos en ese rango.' : n === 1 ? '1 turno afectado: Nicolás 15:00' : '2 turnos afectados: Juan 14:00 y Nicolás 15:00';
+    $$('[data-opt]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.opt === state.opt)); });
+    var t = $('#tpls'); t.textContent = '';
+    tpls.forEach(function (x, i) { t.appendChild(btn('chip', x[0], state.tpl === i, function () { state.tpl = i; render(); })); });
+    $('#customBox').hidden = state.tpl !== 5;
+    $('#preview').textContent = fill(body(), 'Juan', '14:00');
+    $('#ctaBlock').textContent = n === 0 ? 'Bloquear' : 'Bloquear y ver los mensajes (' + n + ')';
+    // Pantalla de envío
+    $('#blockedText').textContent = '2 turnos suspendidos. ' + (state.opt === 'elegir' ? 'Cada uno recibe un enlace para elegir otro horario.' : 'Se los invita a reservar de nuevo.');
+    $('#msgJuan').textContent = fill(body(), 'Juan', '14:00');
+    $('#msgNico').textContent = fill(body(), 'Nicolás', '15:00');
+    $('#progress').textContent = (state.juan ? 2 : 1) + ' de 2 avisados';
+    $('#juanBadge').textContent = state.juan ? 'Enviado por WhatsApp' : 'Pendiente';
+    $('#juanBadge').className = 'badge ' + (state.juan ? 'ok2' : 'warn');
+  }
+  $('#sendJuan').onclick = function () { state.juan = true; render(); };
+  $('#sendNico').onclick = function () { this.textContent = 'También enviado por WhatsApp'; };
+
+  function render() { renderSlots(); renderCancel(); }
+  render();
+})();
+</script>
+</body>
+</html>

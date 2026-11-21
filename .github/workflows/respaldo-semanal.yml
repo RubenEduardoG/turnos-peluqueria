@@ -1,0 +1,48 @@
+# Respaldo semanal de la base (el plan gratuito de Supabase no tiene backups automáticos).
+# Genera un volcado cifrado y lo guarda como artefacto privado del repositorio por 90 días.
+#
+# Secrets necesarios:
+#   SUPABASE_DB_URL     Cadena de conexión del "Session pooler" (Project Settings → Database).
+#                       Usar el pooler: la conexión directa de Supabase es sólo IPv6.
+#   BACKUP_PASSPHRASE   Contraseña larga para cifrar el respaldo. Guardala fuera de GitHub:
+#                       sin ella el respaldo no se puede abrir.
+#
+# Restaurar:  gpg -d respaldo.sql.gz.gpg | gunzip | psql "<url de la base nueva>"
+name: Respaldo semanal
+
+on:
+  schedule:
+    - cron: "41 7 * * 1"   # lunes 04:41 hora de Argentina
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar cliente de PostgreSQL 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Volcar y cifrar
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          FILE="respaldo-$(date -u +%Y-%m-%d).sql.gz.gpg"
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
+              --schema=public --no-owner --no-privileges \
+            | gzip -9 \
+            | gpg --batch --yes --symmetric --cipher-algo AES256 \
+                  --passphrase "$BACKUP_PASSPHRASE" -o "$FILE"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+
+      - name: Guardar como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILE }}
+          path: ${{ env.FILE }}
+          retention-days: 90
